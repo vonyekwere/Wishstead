@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 
 export default function LoginPage() {
@@ -130,19 +131,19 @@ export default function LoginPage() {
             </label>
  
             {/* Submit */}
-            <button
-              type="submit"
-              className="w-full rounded-xl bg-[#4A1620] py-3 text-sm font-medium text-white transition-colors hover:bg-[#5c1c29]"
+            <Link
+              href="/signup"
+              className="block w-full rounded-xl bg-[#4A1620] py-3 text-center text-sm font-medium text-white transition-colors hover:bg-[#5c1c29]"
             >
               Sign In
-            </button>
+            </Link>
           </form>
  
           <p className="mt-6 text-center text-sm text-neutral-600">
             New to Wishstead?{" "}
-            <a href="#apply" className="font-semibold text-[#4A1620]">
+            <Link href="/vender" className="font-semibold text-[#4A1620]">
               Apply to be a Vendor
-            </a>
+            </Link>
           </p>
         </div>
       </div>
