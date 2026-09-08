@@ -50,7 +50,7 @@ export default function Home() {
             </div>
 
             <h1 className="font-serif text-[2.75rem] leading-[1.08] text-ink sm:text-[3.4rem]">
-              Don&apos;t know what to
+              Don&apos;t know what to    
               <br />
               gift?
               <br />
