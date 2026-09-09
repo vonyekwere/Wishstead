@@ -26,18 +26,18 @@ export default function Footer() {
         <div className="h-px bg-tan-line" />
 
         {/* Content row */}
-        <div className="flex flex-col gap-10 py-12 sm:flex-row sm:items-start sm:justify-between">
-          <div>
+        <div className="flex flex-col gap-12 py-12 sm:flex-row sm:items-start sm:justify-between sm:gap-10">
+          <div className="max-w-xs">
             <h3 className="font-serif text-xl font-semibold text-maroon">
               The Gifting House
             </h3>
-            <p className="mt-3 max-w-xs font-serif italic leading-relaxed text-body">
+            <p className="mt-3 font-serif italic leading-relaxed text-body">
               Established in the spirit of 19th-century thoughtfulness,
               crafted for the modern digital age.
             </p>
           </div>
 
-          <div className="flex gap-20">
+          <div className="flex flex-wrap gap-x-16 gap-y-10">
             {linkColumns.map((column, i) => (
               <ul key={i} className="space-y-4">
                 {column.map((link) => (
