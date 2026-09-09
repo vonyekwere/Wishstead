@@ -37,7 +37,7 @@ export default function SignupPage() {
         {/* Left — image panel */}
         <div className="relative hidden overflow-hidden lg:block">
           <Image
-            src="/images/login.png"
+            src="/images/login-page.png"
             alt="Warm, softly lit artisanal candles surrounded by dried flowers"
             fill
             priority

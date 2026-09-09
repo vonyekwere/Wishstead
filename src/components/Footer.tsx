@@ -1,4 +1,4 @@
-import Image from "next/image";
+import Link from "next/link";
 
 const linkColumns = [
   ["How It Works", "For Businesses", "Terms"],
@@ -11,16 +11,14 @@ export default function Footer() {
       <div className="container pt-16">
         {/* Logo row */}
         <div className="flex items-center justify-center gap-3 pb-10">
-          <Image
-            src="/images/footer-logo.png"
-            alt="Wishstead"
-            width={40}
-            height={40}
-            className="h-10 w-10 rounded-[4px] object-cover"
-          />
-          <span className="font-serif text-2xl font-semibold text-body">
+           <Link href="/" className="flex shrink-0 items-center gap-2.5">
+          <span className="flex h-6 w-6 items-center justify-center rounded-[3px] bg-maroon font-serif text-[0.6rem] font-semibold text-cream">
+            W
+          </span>
+          <span className="whitespace-nowrap font-serif text-[1.2rem] font-semibold tracking-tight text-ink xs:text-[1.35rem] sm:text-[1.4rem]">
             Wishstead
           </span>
+        </Link>
         </div>
 
         <div className="h-px bg-tan-line" />

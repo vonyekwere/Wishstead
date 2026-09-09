@@ -24,7 +24,17 @@ export default function TopHeader({
   onMenuToggle: () => void;
 }) {
   const [accountOpen, setAccountOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function onScroll() {
+      setScrolled(window.scrollY > 12);
+    }
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   useEffect(() => {
     if (!accountOpen) return;
@@ -51,7 +61,13 @@ export default function TopHeader({
   }, [accountOpen]);
 
   return (
-    <header className="flex items-center justify-between gap-4 border-b border-[#E9E2D6] bg-[#FBF9F4] px-5 py-4 sm:px-8 lg:px-10">
+    <header
+      className={`sticky top-0 z-30 flex items-center justify-between gap-4 bg-[#FBF9F4] px-5 py-4 transition-[border-color,box-shadow] sm:px-8 lg:px-10 ${
+        scrolled
+          ? "border-b border-[#E9E2D6] shadow-[0_1px_2px_rgba(36,28,21,0.04)]"
+          : "border-b border-transparent"
+      }`}
+    >
       <div className="flex items-center gap-3">
         <button
           type="button"
