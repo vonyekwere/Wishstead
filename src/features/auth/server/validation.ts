@@ -6,6 +6,7 @@ import type {
   ChangePasswordInput,
   DeleteAccountInput,
   LoginInput,
+  OAuthInput,
   ResetPasswordInput,
   SignUpInput,
   SetUserRoleInput,
@@ -18,6 +19,7 @@ const MIN_PASSWORD_LENGTH = 8
 const MAX_PASSWORD_LENGTH = 128
 const MAX_NAME_LENGTH = 120
 const MAX_AVATAR_URL_LENGTH = 2048
+const MAX_REDIRECT_PATH_LENGTH = 2048
 const USER_ROLES = ['customer', 'vendor', 'admin', 'super_admin'] as const
 
 export class RequestValidationError extends Error {}
@@ -107,6 +109,32 @@ function captchaToken(body: Record<string, unknown>) {
 export function parseLoginInput(value: unknown): LoginInput {
   const body = objectBody(value)
   return { email: email(body), password: password(body), captchaToken: captchaToken(body) }
+}
+
+export function safeRedirectPath(value: unknown, fallback = '/') {
+  if (value === undefined || value === null || value === '') return fallback
+  if (
+    typeof value !== 'string' ||
+    value.length > MAX_REDIRECT_PATH_LENGTH ||
+    !value.startsWith('/') ||
+    value.startsWith('//') ||
+    value.includes('\\') ||
+    /[\u0000-\u001f\u007f]/.test(value)
+  ) {
+    throw new RequestValidationError('Redirect path is invalid')
+  }
+
+  const parsed = new URL(value, 'http://wishstead.local')
+  if (parsed.origin !== 'http://wishstead.local') {
+    throw new RequestValidationError('Redirect path is invalid')
+  }
+  return `${parsed.pathname}${parsed.search}${parsed.hash}`
+}
+
+export function parseOAuthInput(value: unknown): OAuthInput {
+  if (value === undefined || value === null) return { next: '/' }
+  const body = objectBody(value)
+  return { next: safeRedirectPath(body.next) }
 }
 
 export function parseSignUpInput(value: unknown): SignUpInput {

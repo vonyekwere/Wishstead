@@ -17,17 +17,25 @@ type ErrorLike = {
 }
 
 const AUTH_STATUS_BY_CODE: Record<string, number> = {
+  bad_code_verifier: 400,
+  bad_oauth_callback: 400,
+  bad_oauth_state: 400,
   bad_jwt: 401,
   email_not_confirmed: 403,
   invalid_credentials: 401,
   no_authorization: 401,
   not_admin: 403,
+  flow_state_expired: 400,
+  flow_state_not_found: 400,
+  oauth_provider_not_supported: 400,
+  provider_disabled: 503,
   refresh_token_not_found: 401,
   refresh_token_already_used: 401,
   session_not_found: 401,
   user_not_found: 404,
   user_banned: 403,
   weak_password: 422,
+  validation_failed: 400,
 }
 
 const DATABASE_STATUS_BY_CODE: Record<string, number> = {

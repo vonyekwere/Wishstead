@@ -35,6 +35,10 @@ export interface SetUserRoleInput {
   role: UserRole
 }
 
+export interface OAuthInput {
+  next: string
+}
+
 export interface UpdateProfileInput {
   fullName?: string | null
   avatarUrl?: string | null

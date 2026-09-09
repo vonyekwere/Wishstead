@@ -8,6 +8,7 @@ test('all required authentication route contracts exist', async () => {
   const routes = {
     'src/app/api/auth/signup/route.ts': 'POST',
     'src/app/api/auth/login/route.ts': 'POST',
+    'src/app/api/auth/google/route.ts': 'POST',
     'src/app/api/auth/logout/route.ts': 'POST',
     'src/app/api/auth/me/route.ts': 'GET',
     'src/app/api/auth/profile/route.ts': 'PATCH',
@@ -33,10 +34,26 @@ test('all required authentication route contracts exist', async () => {
 test('password recovery is routed through the server-side PKCE callback', async () => {
   const service = await read('src/features/auth/server/service.ts')
   const handlers = await read('src/features/auth/server/http-handlers.ts')
+  const validation = await read('src/features/auth/server/validation.ts')
 
   assert.match(service, /\/auth\/callback\?next=\/auth\/reset-password/)
   assert.match(handlers, /exchangeCodeForSession/)
-  assert.match(handlers, /!next\.startsWith\('\/\/'\)/)
+  assert.match(handlers, /safeRedirectPath/)
+  assert.match(validation, /value\.startsWith\('\/\/'\)/)
+})
+
+test('Google OAuth uses a server-side PKCE callback and safe local redirects', async () => {
+  const service = await read('src/features/auth/server/service.ts')
+  const handlers = await read('src/features/auth/server/http-handlers.ts')
+  const validation = await read('src/features/auth/server/validation.ts')
+
+  assert.match(service, /signInWithOAuth/)
+  assert.match(service, /provider:\s*'google'/)
+  assert.match(service, /skipBrowserRedirect:\s*true/)
+  assert.match(handlers, /exchangeCodeForSession/)
+  assert.match(handlers, /oauth_access_denied/)
+  assert.match(validation, /safeRedirectPath/)
+  assert.match(validation, /value\.startsWith\('\/\/'\)/)
 })
 
 test('public auth responses do not serialize the session tokens', async () => {
@@ -87,4 +104,12 @@ test('profile and internal function grants are explicit', async () => {
   assert.match(migration, /revoke all on table public\.profiles from authenticated/i)
   assert.match(migration, /grant update \(full_name, avatar_url\)/i)
   assert.match(migration, /revoke execute on function public\.handle_new_user\(\)/i)
+})
+
+test('Google profile metadata is normalized by the auth trigger', async () => {
+  const migration = await read('supabase/migrations/20260908120000_support_google_auth_profiles.sql')
+  assert.match(migration, /raw_user_meta_data ->> 'name'/i)
+  assert.match(migration, /raw_user_meta_data ->> 'picture'/i)
+  assert.match(migration, /values \(new\.id, profile_name, profile_avatar, 'customer'\)/i)
+  assert.match(migration, /revoke execute on function public\.handle_new_user/i)
 })

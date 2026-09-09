@@ -27,6 +27,7 @@ import {
   resendVerification,
   setUserRole,
   signUpUser,
+  startGoogleOAuth,
   updateProfile,
 } from '@/features/auth/server/service'
 import {
@@ -35,11 +36,13 @@ import {
   parseChangePasswordInput,
   parseDeleteAccountInput,
   parseLoginInput,
+  parseOAuthInput,
   parseResetPasswordInput,
   parseSignUpInput,
   parseSetUserRoleInput,
   parseUserId,
   parseUpdateProfileInput,
+  safeRedirectPath,
   validateRequestOrigin,
 } from '@/features/auth/server/validation'
 
@@ -83,6 +86,25 @@ export async function loginHandler(request: Request) {
     return successResponse({ user: result.user })
   } catch (error) {
     console.error('Login API error:', error)
+    return errorResponse(error)
+  }
+}
+
+export async function googleOAuthHandler(request: Request) {
+  try {
+    validateRequestOrigin(request)
+    const limited = await rateLimited(request, 'google-oauth', 10)
+    if (limited) return limited
+
+    const contentLength = request.headers.get('content-length')
+    const input =
+      contentLength === '0' || (!contentLength && !request.headers.get('content-type'))
+        ? parseOAuthInput(undefined)
+        : parseOAuthInput(await request.json())
+    const result = await startGoogleOAuth(input)
+    return successResponse(result)
+  } catch (error) {
+    console.error('Google OAuth API error:', error)
     return errorResponse(error)
   }
 }
@@ -315,9 +337,29 @@ export async function authCallbackHandler(request: Request) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
   const flowId = requestUrl.searchParams.get('sb_flow_id')
-  const next = requestUrl.searchParams.get('next') ?? '/'
+  let safeNext = '/'
+  try {
+    safeNext = safeRedirectPath(requestUrl.searchParams.get('next'))
+  } catch {
+    safeNext = '/'
+  }
 
-  const safeNext = next.startsWith('/') && !next.startsWith('//') ? next : '/'
+  const providerError = requestUrl.searchParams.get('error')
+  if (providerError) {
+    return NextResponse.redirect(
+      callbackErrorUrl(
+        {
+          message:
+            providerError === 'access_denied'
+              ? 'Google authentication was cancelled'
+              : 'Google authentication failed',
+          code: providerError === 'access_denied' ? 'oauth_access_denied' : 'oauth_provider_error',
+          status: 400,
+        },
+        requestUrl.origin,
+      ),
+    )
+  }
 
   if (!code) {
     return NextResponse.redirect(
@@ -334,12 +376,20 @@ export async function authCallbackHandler(request: Request) {
 
   try {
     const supabase = await createClient()
-    const { error } = await supabase.auth.exchangeCodeForSession(
+    const { data, error } = await supabase.auth.exchangeCodeForSession(
       code,
       flowId ? { flowId } : undefined,
     )
 
     if (error) throw error
+    await writeAuthAuditEvent({
+      actorId: data.user.id,
+      action: 'user.oauth_completed',
+      targetUserId: data.user.id,
+      metadata: {
+        provider: data.user.app_metadata.provider ?? 'unknown',
+      },
+    })
     return NextResponse.redirect(new URL(safeNext, requestUrl.origin))
   } catch (error) {
     console.error('Auth callback error:', error)

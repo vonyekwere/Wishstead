@@ -8,6 +8,7 @@ import type {
   DeleteAccountInput,
   ForgotPasswordInput,
   LoginInput,
+  OAuthInput,
   ResetPasswordInput,
   SignUpInput,
   SetUserRoleInput,
@@ -42,6 +43,57 @@ export async function loginUser(input: LoginInput) {
   if (error) throw error
 
   return { user: data.user, session: data.session }
+}
+
+export async function startGoogleOAuth(input: OAuthInput) {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
+  if (!siteUrl) {
+    throw {
+      message: 'Application site URL is not configured',
+      code: 'site_url_not_configured',
+      status: 500,
+    }
+  }
+
+  let callbackUrl: URL
+  try {
+    callbackUrl = new URL('/auth/callback', siteUrl)
+  } catch {
+    throw {
+      message: 'Application site URL is invalid',
+      code: 'site_url_invalid',
+      status: 500,
+    }
+  }
+  if (!['http:', 'https:'].includes(callbackUrl.protocol)) {
+    throw {
+      message: 'Application site URL must use HTTP or HTTPS',
+      code: 'site_url_invalid',
+      status: 500,
+    }
+  }
+  callbackUrl.searchParams.set('next', input.next)
+
+  const supabase = await createClient()
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: callbackUrl.toString(),
+      skipBrowserRedirect: true,
+      queryParams: { prompt: 'select_account' },
+    },
+  })
+
+  if (error) throw error
+  if (!data.url) {
+    throw {
+      message: 'Google did not return an authorization URL',
+      code: 'oauth_url_missing',
+      status: 502,
+    }
+  }
+
+  return { url: data.url }
 }
 
 export async function logoutUser() {
