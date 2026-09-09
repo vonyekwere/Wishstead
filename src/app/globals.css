@@ -85,9 +85,14 @@
   --color-tan: #f2eee6;
   --color-tan-line: #ddd0ac;
   --color-gold: #b99b5e;
+  --color-burgundy: #4a1620;
+  --color-burgundy-dark: #390f16;
+  --color-success: #2f6b4a;
 
   --font-serif: "Liberation Serif", Georgia, "Times New Roman", serif;
   --font-sans: "Liberation Serif", Georgia, "Times New Roman", serif;
+  --font-ui: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
 
   --max-w-content: 1400px;
   --tracking-widest2: 0.22em;
