@@ -15,7 +15,7 @@ export default function Header() {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-40 bg-cream/95 backdrop-blur-sm">
+    <header className="sticky top-0 z-40 bg-cream/95 backdrop-blur-sm border-b border-[#f1ebe2]">
       <div className="container flex items-center justify-between py-4 sm:py-5">
         {/* Brand */}
         <Link href="/" className="flex shrink-0 items-center gap-2.5">

@@ -36,7 +36,7 @@ export default function Home() {
           style={{ backgroundImage: "url('/images/hero.png')" }}
         />
         {/* Warm scrim so text stays legible over the photo */}
-        <div className="absolute inset-0 bg-gradient-to-r from-cream via-cream/30 to-cream/5" />
+        {/* <div className="absolute inset-0 bg-gradient-to-r from-cream via-cream/30 to-cream/5" /> */}
 
         <div className="relative container py-24 sm:py-32 lg:py-44">
           <div className="max-w-xl">
@@ -45,15 +45,15 @@ export default function Home() {
               <p className="eyebrow">Thoughtful Gifts. Meaningful Connections.</p>
             </div>
 
-            <h1 className="font-serif text-[2.2rem] leading-[1.1] text-ink sm:text-[3.4rem] sm:leading-[1.08]">
+            <h1 className="font-serif text-[2.2rem] leading-[1.1] text-ink sm:text-[4.4rem] sm:leading-[1.08]">
               Don&apos;t know what to
-              <br />
+              {/* <br /> */}
               gift?
               <br />
               <span className="italic text-maroon">We&apos;ve got you.</span>
             </h1>
 
-            <p className="mt-6 max-w-md text-base leading-relaxed text-body sm:text-[1.05rem]">
+            <p className="mt-6 max-w-md text-base  leading-relaxed  text-black sm:text-[1.05rem]">
               Personalized gift ideas for every person, every occasion and every
               budget. Discover the art of modern thoughtful gifting.
             </p>
@@ -201,7 +201,7 @@ export default function Home() {
   {/* Card 2 */}
   <div className='rounded-lg p-3 border border-[#D9B36A4D] bg-[#F2EEE6] relative min-h-[300px]'>
     <div className="relative">
-      <img src='images/gift-1.png' className='rounded-md w-full object-cover h-84' />
+      <img src='images/gift-2.png' className='rounded-md w-full object-cover h-84' />
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent rounded-md pointer-events-none"></div>
     </div>
     <div className='gift-boxes-content absolute bottom-10 flex flex-col items-center w-full z-10'>
@@ -213,7 +213,7 @@ export default function Home() {
   {/* Card 3 */}
   <div className='rounded-lg p-3 border border-[#D9B36A4D] bg-[#F2EEE6] relative min-h-[300px]'>
     <div className="relative">
-      <img src='images/gift-1.png' className='rounded-md w-full object-cover h-84' />
+      <img src='images/gift-3.png' className='rounded-md w-full object-cover h-84' />
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent rounded-md pointer-events-none"></div>
     </div>
     <div className='gift-boxes-content absolute bottom-10 flex flex-col items-center w-full z-10'>
@@ -225,7 +225,7 @@ export default function Home() {
   {/* Card 4 */}
   <div className='rounded-lg p-3 border border-[#D9B36A4D] bg-[#F2EEE6] relative min-h-[300px]'>
     <div className="relative">
-      <img src='images/gift-1.png' className='rounded-md w-full object-cover h-84' />
+      <img src='images/gift-4.png' className='rounded-md w-full object-cover h-84' />
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent rounded-md pointer-events-none"></div>
     </div>
     <div className='gift-boxes-content absolute bottom-10 flex flex-col items-center w-full z-10'>
@@ -237,7 +237,7 @@ export default function Home() {
   {/* Card 5 */}
   <div className='rounded-lg p-3 border border-[#D9B36A4D] bg-[#F2EEE6] relative min-h-[300px]'>
     <div className="relative">
-      <img src='images/gift-1.png' className='rounded-md w-full object-cover h-84' />
+      <img src='images/gift-5.png' className='rounded-md w-full object-cover h-84' />
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent rounded-md pointer-events-none"></div>
     </div>
     <div className='gift-boxes-content absolute bottom-10 flex flex-col items-center w-full z-10'>
