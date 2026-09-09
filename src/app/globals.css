@@ -71,6 +71,9 @@
 }
 
 @theme {
+  --breakpoint-xs: 480px;
+  --breakpoint-desktop: 992px;
+
   --color-cream: #fbf9f5;
   --color-cream-alt: #f2eee6;
   --color-cream-deep: #f2eee6;
@@ -100,14 +103,14 @@ html {
 
 body {
   background-color: var(--color-cream);
-  
   color: var(--color-body);
   font-family: "Liberation Serif", Georgia, "Times New Roman", serif;
+  overflow-x: hidden;
 }
 
 .eyebrow {
   /* font-family: var(--font-serif); */
-  font-size: 14px;
+  font-size: clamp(0.72rem, 3vw, 0.875rem);
   font-weight: 600;
   letter-spacing: 0.22em;
   text-transform: uppercase;
@@ -121,11 +124,18 @@ body {
 
 .container {
   width: 100%;
-  max-width: 90%;
+  max-width: var(--max-w-content);
   margin-left: auto;
   margin-right: auto;
-  padding-left: 1.5rem;
-  padding-right: 1.5rem;
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+}
+
+@media (min-width: 640px) {
+  .container {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
 }
 
 @media (min-width: 1024px) {
@@ -135,16 +145,27 @@ body {
   }
 }
 
-.heading{
-  font-size:32px;
-  font-weight:600;
-  color:var(--color-maroon) !important;
+.heading {
+  font-size: clamp(1.75rem, 0.5rem + 4vw, 2rem);
+  font-weight: 600;
+  color: var(--color-maroon) !important;
 }
 
-.heading .heading-line{
-  width:50px;
-  margin-top:20px;
-  height:4px;
-  border-radius:20px;
-  background:#D9B36A
+.heading-line {
+  width: 50px;
+  margin-top: 20px;
+  height: 4px;
+  border-radius: 20px;
+  background: #d9b36a;
+}
+
+@keyframes headerMenuIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

@@ -32,7 +32,7 @@ export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <main className="flex flex-col bg-cream">
+    <div className="flex flex-col bg-cream">
       <div className="grid w-full grid-cols-1 lg:min-h-[80dvh] lg:grid-cols-2">
         {/* Left — image panel */}
         <div className="relative hidden overflow-hidden lg:block">
@@ -184,6 +184,6 @@ export default function SignupPage() {
           </div>
         </div>
       </div>
-    </main>
+    </div>
   );
 }

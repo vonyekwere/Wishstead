@@ -13,7 +13,7 @@ export default function VendorApplyPage() {
     "ml-3 w-full bg-transparent text-sm text-[#2E2A24] placeholder:text-neutral-400 focus:outline-none";
 
   return (
-    <main className="flex flex-col bg-cream">
+    <div className="flex flex-col bg-cream">
       <div className="mx-auto w-full max-w-5xl rounded-[12px] border border-[#DAC0C1] bg-white px-5 py-14 sm:px-8 sm:py-20">
         {/* Header */}
         <div className="text-center">
@@ -198,6 +198,6 @@ export default function VendorApplyPage() {
           </div>
         </form>
       </div>
-    </main>
+    </div>
   );
 }
