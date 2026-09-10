@@ -16,6 +16,8 @@
     "test:auth:security": "node scripts/verify-profile-role-security.mjs",
     "db:reset": "supabase db reset",
     "db:lint": "supabase db lint --level warning",
+    "seed:admins:local": "node scripts/seed-admins.mjs --target=local",
+    "seed:admins:production": "node scripts/seed-admins.mjs --target=production",
     "check": "npm run lint && npm run typecheck && npm run test:auth && npm run build && npm run test:auth:http"
   },
   "dependencies": {

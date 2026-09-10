@@ -48,14 +48,14 @@ async function getAuthenticatedUser() {
 
 export async function requireUser() {
   const user = await getAuthenticatedUser()
-  if (!user) redirect('/login')
+  if (!user) redirect('/auth/login')
   return user
 }
 
 export async function requireRole(allowedRoles: UserRole[]) {
   const { user, profile } = await getAuthorizationContext()
 
-  if (!user) redirect('/login')
+  if (!user) redirect('/auth/login')
   if (!profile || !allowedRoles.includes(profile.role)) {
     redirect('/unauthorized')
   }

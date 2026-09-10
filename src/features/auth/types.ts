@@ -28,7 +28,8 @@ export interface ChangeEmailInput {
 }
 
 export interface DeleteAccountInput {
-  password: string
+  password?: string
+  confirmation: string
 }
 
 export interface SetUserRoleInput {
@@ -37,6 +38,14 @@ export interface SetUserRoleInput {
 
 export interface OAuthInput {
   next: string
+}
+
+export interface VendorApplicationInput extends SignUpInput {
+  businessName: string
+  businessDescription: string
+  websiteUrl: string | null
+  primaryCategory: string
+  logo: File | null
 }
 
 export interface UpdateProfileInput {

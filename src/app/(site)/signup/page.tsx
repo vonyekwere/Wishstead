@@ -1,9 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { FormEvent, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, ArrowRight, User } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { authRequest, beginGoogleOAuth, errorMessage } from "@/features/auth/client";
+import PasswordRequirements from '@/components/auth/PasswordRequirements'
+import { isStrongPassword } from '@/features/auth/password-policy'
+import Spinner from '@/components/ui/Spinner'
+import { useToast } from '@/components/ui/ToastProvider'
 
 function GoogleLogo() {
   return (
@@ -29,7 +35,47 @@ function GoogleLogo() {
 }
 
 export default function SignupPage() {
+  const router = useRouter();
+  const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [pending, setPending] = useState(false);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError("");
+    setPending(true);
+    try {
+      const result = await authRequest<{ emailVerificationRequired: boolean }>(
+        '/api/auth/signup',
+        { method: 'POST', body: JSON.stringify({ fullName, email, password }) },
+      );
+      router.replace(
+        result.emailVerificationRequired
+          ? `/auth/verify-email?email=${encodeURIComponent(email)}`
+          : '/dashboard',
+      );
+      router.refresh();
+    } catch (submissionError) {
+      const message = errorMessage(submissionError); setError(message); toast(message, 'error');
+    } finally {
+      setPending(false);
+    }
+  }
+
+  async function handleGoogle() {
+    setError("");
+    setPending(true);
+    try {
+      await beginGoogleOAuth('/dashboard');
+    } catch (googleError) {
+      setError(errorMessage(googleError));
+      setPending(false);
+    }
+  }
 
   return (
     <div className="flex flex-col bg-cream">
@@ -74,13 +120,20 @@ export default function SignupPage() {
         <div className="flex items-center justify-center bg-[#FBF9F4] px-5 py-12 sm:px-8 sm:py-16">
           <div className="w-full max-w-md">
             <h2 className="font-serif text-4xl font-bold text-[#4A1620]">
-              Welcome Back
+              Create Your Account
             </h2>
             <p className="mt-3 text-neutral-500">
-              Unlock your ledger of curiosities and heartfelt gifts.
+              Begin your ledger of curiosities and heartfelt gifts.
             </p>
 
-            <form className="mt-10 space-y-6">
+            <form className="mt-10 space-y-6" onSubmit={handleSubmit}>
+              <div>
+                <label htmlFor="fullName" className="block text-sm font-medium text-[#2E2A24]">Full Name</label>
+                <div className="mt-2 flex items-center rounded-xl border border-[#E7C9C9] bg-white px-4 py-3 focus-within:border-[#4A1620]">
+                  <User className="h-4 w-4 text-neutral-400" strokeWidth={1.75} />
+                  <input id="fullName" name="fullName" type="text" value={fullName} onChange={(event) => setFullName(event.target.value)} autoComplete="name" required maxLength={120} placeholder="Enter your full name" className="ml-3 w-full bg-transparent text-sm text-[#2E2A24] placeholder:text-neutral-400 focus:outline-none" />
+                </div>
+              </div>
               {/* Email */}
               <div>
                 <label
@@ -93,7 +146,12 @@ export default function SignupPage() {
                   <Mail className="h-4 w-4 text-neutral-400" strokeWidth={1.75} />
                   <input
                     id="email"
+                    name="email"
                     type="email"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    autoComplete="email"
+                    required
                     placeholder="hello@yourboutique.com"
                     className="ml-3 w-full bg-transparent text-sm text-[#2E2A24] placeholder:text-neutral-400 focus:outline-none"
                   />
@@ -112,7 +170,14 @@ export default function SignupPage() {
                   <Lock className="h-4 w-4 text-neutral-400" strokeWidth={1.75} />
                   <input
                     id="password"
+                    name="password"
                     type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    autoComplete="new-password"
+                    required
+                    minLength={8}
+                    maxLength={128}
                     placeholder="••••••••"
                     className="ml-3 w-full bg-transparent text-sm text-[#2E2A24] placeholder:text-neutral-400 focus:outline-none"
                   />
@@ -129,14 +194,18 @@ export default function SignupPage() {
                     )}
                   </button>
                 </div>
+                <PasswordRequirements password={password} />
               </div>
+
+              {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
 
               {/* Submit */}
               <button
                 type="submit"
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#4A1620] py-3 text-sm font-medium text-white transition-colors hover:bg-[#5c1c29]"
+                disabled={pending || !isStrongPassword(password)}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#4A1620] py-3 text-sm font-medium text-white transition-colors hover:bg-[#5c1c29] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Enter Ledger
+                {pending && <Spinner />}{pending ? 'Creating Account…' : 'Create Account'}
                 <ArrowRight className="h-4 w-4" strokeWidth={2} />
               </button>
 
@@ -150,6 +219,8 @@ export default function SignupPage() {
               {/* Google */}
               <button
                 type="button"
+                onClick={handleGoogle}
+                disabled={pending}
                 className="flex w-full items-center justify-center gap-3 rounded-xl border border-[#E7C9C9] bg-white py-3 text-sm font-medium text-[#2E2A24] transition-colors hover:border-[#4A1620]"
               >
                 <GoogleLogo />
@@ -176,8 +247,14 @@ export default function SignupPage() {
             </p>
 
             <p className="mt-6 text-center text-sm text-neutral-600">
-              New to Wishstead?{" "}
-              <Link href="/vender" className="font-semibold text-[#4A1620]">
+              Already have an account?{" "}
+              <Link href="/auth/login" className="font-semibold text-[#4A1620]">
+                Sign In
+              </Link>
+            </p>
+            <p className="mt-3 text-center text-sm text-neutral-600">
+              Registering a business?{" "}
+              <Link href="/auth/vendor" className="font-semibold text-[#4A1620]">
                 Apply to be a Vendor
               </Link>
             </p>

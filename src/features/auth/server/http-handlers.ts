@@ -29,6 +29,7 @@ import {
   signUpUser,
   startGoogleOAuth,
   updateProfile,
+  submitVendorApplication,
 } from '@/features/auth/server/service'
 import {
   parseForgotPasswordInput,
@@ -44,6 +45,7 @@ import {
   parseUpdateProfileInput,
   safeRedirectPath,
   validateRequestOrigin,
+  parseVendorApplicationInput,
 } from '@/features/auth/server/validation'
 
 const AUTH_WINDOW_MS = 15 * 60 * 1000
@@ -105,6 +107,20 @@ export async function googleOAuthHandler(request: Request) {
     return successResponse(result)
   } catch (error) {
     console.error('Google OAuth API error:', error)
+    return errorResponse(error)
+  }
+}
+
+export async function vendorApplicationHandler(request: Request) {
+  try {
+    validateRequestOrigin(request)
+    const limited = await rateLimited(request, 'vendor-application', 5)
+    if (limited) return limited
+    const input = parseVendorApplicationInput(await request.formData())
+    const result = await submitVendorApplication(input)
+    return successResponse(result, 201)
+  } catch (error) {
+    console.error('Vendor application API error:', error)
     return errorResponse(error)
   }
 }
@@ -384,7 +400,7 @@ export async function authCallbackHandler(request: Request) {
     if (error) throw error
     await writeAuthAuditEvent({
       actorId: data.user.id,
-      action: 'user.oauth_completed',
+      action: 'user.auth_callback_completed',
       targetUserId: data.user.id,
       metadata: {
         provider: data.user.app_metadata.provider ?? 'unknown',

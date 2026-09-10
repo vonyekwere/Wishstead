@@ -1,9 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { FormEvent, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { authRequest, beginGoogleOAuth, errorMessage } from "@/features/auth/client";
+import Spinner from '@/components/ui/Spinner'
+import { useToast } from '@/components/ui/ToastProvider'
 
 function GoogleLogo() {
   return (
@@ -29,8 +33,42 @@ function GoogleLogo() {
 }
 
 export default function LoginPage() {
-    const [showPassword, setShowPassword] = useState(false);
-  const [remember, setRemember] = useState(false);
+  const router = useRouter();
+  const { toast } = useToast();
+  const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [pending, setPending] = useState(false);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError("");
+    setPending(true);
+    try {
+      await authRequest('/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+      });
+      router.replace('/dashboard');
+      router.refresh();
+    } catch (submissionError) {
+      const message = errorMessage(submissionError); setError(message); toast(message, 'error');
+    } finally {
+      setPending(false);
+    }
+  }
+
+  async function handleGoogle() {
+    setError("");
+    setPending(true);
+    try {
+      await beginGoogleOAuth('/dashboard');
+    } catch (googleError) {
+      const message = errorMessage(googleError); setError(message); toast(message, 'error');
+      setPending(false);
+    }
+  }
   return (
     <div className="flex flex-col bg-cream">
       <div className="grid w-full grid-cols-1 lg:min-h-[80dvh] lg:grid-cols-2">
@@ -75,13 +113,13 @@ export default function LoginPage() {
       <div className="flex items-center justify-center bg-[#FBF9F4] px-5 py-12 sm:px-8 sm:py-16">
         <div className="w-full max-w-md">
           <h2 className="font-serif text-4xl font-bold text-[#4A1620]">
-            Vendor Login
+            Welcome Back
           </h2>
           <p className="mt-3 text-neutral-500">
-            Welcome back. Enter your details to manage your boutique.
+            Enter your details to continue to your Wishstead dashboard.
           </p>
  
-          <form className="mt-10 space-y-6">
+          <form className="mt-10 space-y-6" onSubmit={handleSubmit}>
             {/* Email */}
             <div>
               <label
@@ -94,7 +132,12 @@ export default function LoginPage() {
                 <Mail className="h-4 w-4 text-neutral-400" strokeWidth={1.75} />
                 <input
                   id="email"
+                  name="email"
                   type="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  autoComplete="email"
+                  required
                   placeholder="hello@yourboutique.com"
                   className="ml-3 w-full bg-transparent text-sm text-[#2E2A24] placeholder:text-neutral-400 focus:outline-none"
                 />
@@ -111,7 +154,7 @@ export default function LoginPage() {
                   Password
                 </label>
                 <a
-                  href="#forgot-password"
+                  href="/auth/forgot-password"
                   className="text-sm text-[#4A1620] underline underline-offset-2"
                 >
                   Forgot password?
@@ -121,7 +164,12 @@ export default function LoginPage() {
                 <Lock className="h-4 w-4 text-neutral-400" strokeWidth={1.75} />
                 <input
                   id="password"
+                  name="password"
                   type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  autoComplete="current-password"
+                  required
                   placeholder="••••••••"
                   className="ml-3 w-full bg-transparent text-sm text-[#2E2A24] placeholder:text-neutral-400 focus:outline-none"
                 />
@@ -142,30 +190,22 @@ export default function LoginPage() {
               </div>
             </div>
  
-            {/* Remember me */}
-            <label className="flex cursor-pointer items-center gap-2">
-              <input
-                type="checkbox"
-                checked={remember}
-                onChange={(e) => setRemember(e.target.checked)}
-                className="h-4 w-4 rounded border-[#E7C9C9] text-[#4A1620] focus:ring-[#4A1620]"
-              />
-              <span className="text-sm text-neutral-600">
-                Remember me on this device
-              </span>
-            </label>
+            {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
  
             {/* Submit */}
-            <Link
-              href="/signup"
-              className="block w-full rounded-xl bg-[#4A1620] py-3 text-center text-sm font-medium text-white transition-colors hover:bg-[#5c1c29]"
+            <button
+              type="submit"
+              disabled={pending}
+              className="block w-full rounded-xl bg-[#4A1620] py-3 text-center text-sm font-medium text-white transition-colors hover:bg-[#5c1c29] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Sign In
-            </Link>
+              {pending && <Spinner className="mr-2 h-4 w-4" />}{pending ? 'Signing In…' : 'Sign In'}
+            </button>
 
               {/* Google */}
               <button
                 type="button"
+                onClick={handleGoogle}
+                disabled={pending}
                 className="flex w-full items-center justify-center gap-3 rounded-xl border border-[#E7C9C9] bg-white py-3 text-sm font-medium text-[#2E2A24] transition-colors hover:border-[#4A1620]"
               >
                 <GoogleLogo />
@@ -175,8 +215,8 @@ export default function LoginPage() {
  
           <p className="mt-6 text-center text-sm text-neutral-600">
             New to Wishstead?{" "}
-            <Link href="/vender" className="font-semibold text-[#4A1620]">
-              Apply to be a Vendor
+            <Link href="/auth/signup" className="font-semibold text-[#4A1620]">
+              Create an account
             </Link>
           </p>
         </div>

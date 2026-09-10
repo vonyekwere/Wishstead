@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from 'next/link'
 import {
   Bell,
   Moon,
@@ -13,19 +14,31 @@ import {
 } from "lucide-react";
 
 const accountMenu = [
-  { label: "Profile", icon: User },
-  { label: "Account Settings", icon: Settings },
-  { label: "Activity Log", icon: History },
+  { label: "Profile", icon: User, href: "/dashboard/settings" },
+  { label: "Account Settings", icon: Settings, href: "/dashboard/settings" },
+  { label: "Activity Log", icon: History, href: "#" },
 ];
 
 export default function TopHeader({
   onMenuToggle,
+  name,
+  email,
+  role,
+  onLogout,
+  logoutPending,
 }: {
   onMenuToggle: () => void;
+  name: string | null;
+  email: string;
+  role: "customer" | "vendor" | "admin" | "super_admin";
+  onLogout: () => void;
+  logoutPending: boolean;
 }) {
   const [accountOpen, setAccountOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const displayName = name || email;
+  const roleLabel = role.replace("_", " ");
 
   useEffect(() => {
     function onScroll() {
@@ -78,7 +91,7 @@ export default function TopHeader({
           <Menu className="h-5 w-5" strokeWidth={1.75} />
         </button>
         <h1 className="font-serif text-xl font-semibold tracking-tight text-burgundy sm:text-2xl">
-          Platform Overview
+          {role === "admin" || role === "super_admin" ? "Platform Overview" : "Dashboard"}
         </h1>
       </div>
 
@@ -112,10 +125,10 @@ export default function TopHeader({
             className="flex items-center gap-2.5 rounded-full py-1 pl-1 pr-1.5 transition-colors hover:bg-[#F5EBE0] sm:pr-2.5"
           >
             <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-burgundy to-burgundy-dark text-[0.72rem] font-semibold text-cream">
-              A
+              {displayName.charAt(0).toUpperCase()}
             </span>
             <span className="hidden text-sm font-medium text-[#48453D] md:block">
-              Admin User
+              {displayName}
             </span>
             <ChevronDown
               className={`h-4 w-4 text-[#6F675A] transition-transform ${
@@ -132,35 +145,37 @@ export default function TopHeader({
             >
               <div className="border-b border-[#EFE9DD] px-4 py-3.5">
                 <p className="text-sm font-semibold text-[#48453D]">
-                  Admin User
+                  {displayName}
                 </p>
                 <p className="mt-0.5 text-xs text-[#8A8172]">
-                  admin@wishstead.com
+                  {email}
                 </p>
+                <p className="mt-1 text-[0.65rem] font-semibold uppercase tracking-wider text-[#8A8172]">{roleLabel}</p>
               </div>
 
               <nav className="p-1.5">
-                {accountMenu.map(({ label, icon: Icon }) => (
-                  <button
+                {accountMenu.map(({ label, icon: Icon, href }) => (
+                  <Link
                     key={label}
-                    type="button"
+                    href={href}
                     onClick={() => setAccountOpen(false)}
                     className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-[#48453D] transition-colors hover:bg-[#F5EBE0] hover:text-burgundy"
                   >
                     <Icon className="h-4 w-4 shrink-0" strokeWidth={1.75} />
                     {label}
-                  </button>
+                  </Link>
                 ))}
               </nav>
 
               <div className="border-t border-[#EFE9DD] p-1.5">
                 <button
                   type="button"
-                  onClick={() => setAccountOpen(false)}
+                  onClick={onLogout}
+                  disabled={logoutPending}
                   className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium text-burgundy transition-colors hover:bg-[#F5EBE0]"
                 >
                   <LogOut className="h-4 w-4 shrink-0" strokeWidth={1.75} />
-                  Sign Out
+                  {logoutPending ? "Signing out…" : "Sign Out"}
                 </button>
               </div>
             </div>

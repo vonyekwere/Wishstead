@@ -11,15 +11,19 @@ import type {
   SignUpInput,
   SetUserRoleInput,
   UpdateProfileInput,
+  VendorApplicationInput,
 } from '@/features/auth/types'
+import { isStrongPassword, PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '@/features/auth/password-policy'
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const MAX_EMAIL_LENGTH = 254
-const MIN_PASSWORD_LENGTH = 8
-const MAX_PASSWORD_LENGTH = 128
 const MAX_NAME_LENGTH = 120
 const MAX_AVATAR_URL_LENGTH = 2048
 const MAX_REDIRECT_PATH_LENGTH = 2048
+const MAX_BUSINESS_NAME_LENGTH = 160
+const MAX_BUSINESS_DESCRIPTION_LENGTH = 2000
+const MAX_CATEGORY_LENGTH = 100
+const MAX_LOGO_SIZE = 5 * 1024 * 1024
 const USER_ROLES = ['customer', 'vendor', 'admin', 'super_admin'] as const
 
 export class RequestValidationError extends Error {}
@@ -94,9 +98,19 @@ function password(body: Record<string, unknown>) {
   if (typeof value !== 'string' || !value) {
     throw new RequestValidationError('Password is required')
   }
-  if (value.length < MIN_PASSWORD_LENGTH || value.length > MAX_PASSWORD_LENGTH) {
+  if (value.length < PASSWORD_MIN_LENGTH || value.length > PASSWORD_MAX_LENGTH) {
     throw new RequestValidationError(
-      `Password must be between ${MIN_PASSWORD_LENGTH} and ${MAX_PASSWORD_LENGTH} characters`,
+      `Password must be between ${PASSWORD_MIN_LENGTH} and ${PASSWORD_MAX_LENGTH} characters`,
+    )
+  }
+  return value
+}
+
+function newPassword(body: Record<string, unknown>) {
+  const value = password(body)
+  if (!isStrongPassword(value)) {
+    throw new RequestValidationError(
+      'Password must include uppercase, lowercase, number, and special characters',
     )
   }
   return value
@@ -137,13 +151,99 @@ export function parseOAuthInput(value: unknown): OAuthInput {
   return { next: safeRedirectPath(body.next) }
 }
 
+function requiredFormString(formData: FormData, key: string, label: string) {
+  const value = formData.get(key)
+  if (typeof value !== 'string' || !value.trim()) {
+    throw new RequestValidationError(`${label} is required`)
+  }
+  return value.trim()
+}
+
+export function parseVendorApplicationInput(
+  formData: FormData,
+): VendorApplicationInput {
+  const fullName = requiredFormString(formData, 'fullName', 'Full name')
+  const emailValue = requiredFormString(formData, 'email', 'Email')
+  const passwordValue = requiredFormString(formData, 'password', 'Password')
+  const businessName = requiredFormString(formData, 'businessName', 'Business name')
+  const businessDescription = requiredFormString(
+    formData,
+    'businessDescription',
+    'Business description',
+  )
+  const primaryCategory = requiredFormString(
+    formData,
+    'primaryCategory',
+    'Primary category',
+  )
+  const websiteValue = formData.get('websiteUrl')
+  const websiteUrl =
+    typeof websiteValue === 'string' && websiteValue.trim()
+      ? websiteValue.trim()
+      : null
+  const logoValue = formData.get('logo')
+  const logo = logoValue instanceof File && logoValue.size > 0 ? logoValue : null
+
+  if (fullName.length > MAX_NAME_LENGTH) {
+    throw new RequestValidationError(`Full name must not exceed ${MAX_NAME_LENGTH} characters`)
+  }
+  if (businessName.length < 2 || businessName.length > MAX_BUSINESS_NAME_LENGTH) {
+    throw new RequestValidationError('Business name must be between 2 and 160 characters')
+  }
+  if (
+    businessDescription.length < 20 ||
+    businessDescription.length > MAX_BUSINESS_DESCRIPTION_LENGTH
+  ) {
+    throw new RequestValidationError(
+      'Business description must be between 20 and 2000 characters',
+    )
+  }
+  if (primaryCategory.length < 2 || primaryCategory.length > MAX_CATEGORY_LENGTH) {
+    throw new RequestValidationError('Primary category must be between 2 and 100 characters')
+  }
+  if (websiteUrl) {
+    if (websiteUrl.length > MAX_AVATAR_URL_LENGTH) {
+      throw new RequestValidationError('Website URL is too long')
+    }
+    let parsedWebsite: URL
+    try {
+      parsedWebsite = new URL(websiteUrl)
+    } catch {
+      throw new RequestValidationError('Website URL must be valid')
+    }
+    if (!['http:', 'https:'].includes(parsedWebsite.protocol)) {
+      throw new RequestValidationError('Website URL must use HTTP or HTTPS')
+    }
+  }
+  if (logo && !['image/png', 'image/jpeg'].includes(logo.type)) {
+    throw new RequestValidationError('Logo must be a PNG or JPEG image')
+  }
+  if (logo && logo.size > MAX_LOGO_SIZE) {
+    throw new RequestValidationError('Logo must not exceed 5MB')
+  }
+
+  const credentials = parseSignUpInput({
+    fullName,
+    email: emailValue,
+    password: passwordValue,
+  })
+  return {
+    ...credentials,
+    businessName,
+    businessDescription,
+    websiteUrl: websiteUrl ? new URL(websiteUrl).toString() : null,
+    primaryCategory,
+    logo,
+  }
+}
+
 export function parseSignUpInput(value: unknown): SignUpInput {
   const body = objectBody(value)
   const fullName = requiredString(body, 'fullName', 'Full name')
   if (fullName.length > MAX_NAME_LENGTH) {
     throw new RequestValidationError(`Full name must not exceed ${MAX_NAME_LENGTH} characters`)
   }
-  return { email: email(body), password: password(body), fullName, captchaToken: captchaToken(body) }
+  return { email: email(body), password: newPassword(body), fullName, captchaToken: captchaToken(body) }
 }
 
 export function parseForgotPasswordInput(value: unknown): ForgotPasswordInput {
@@ -152,17 +252,17 @@ export function parseForgotPasswordInput(value: unknown): ForgotPasswordInput {
 }
 
 export function parseResetPasswordInput(value: unknown): ResetPasswordInput {
-  return { password: password(objectBody(value)) }
+  return { password: newPassword(objectBody(value)) }
 }
 
 export function parseChangePasswordInput(value: unknown): ChangePasswordInput {
   const body = objectBody(value)
-  const newPassword = password(body)
+  const newPasswordValue = newPassword(body)
   const currentPassword = requiredString(body, 'currentPassword', 'Current password')
-  if (currentPassword === newPassword) {
+  if (currentPassword === newPasswordValue) {
     throw new RequestValidationError('New password must be different from the current password')
   }
-  return { currentPassword, password: newPassword }
+  return { currentPassword, password: newPasswordValue }
 }
 
 export function parseChangeEmailInput(value: unknown): ChangeEmailInput {
@@ -171,7 +271,18 @@ export function parseChangeEmailInput(value: unknown): ChangeEmailInput {
 
 export function parseDeleteAccountInput(value: unknown): DeleteAccountInput {
   const body = objectBody(value)
-  return { password: requiredString(body, 'password', 'Password') }
+  const confirmation = requiredString(body, 'confirmation', 'Confirmation')
+  if (confirmation !== 'DELETE') {
+    throw new RequestValidationError('Type DELETE to confirm account deletion')
+  }
+  const passwordValue = body.password
+  if (passwordValue !== undefined && typeof passwordValue !== 'string') {
+    throw new RequestValidationError('Password must be a string')
+  }
+  return {
+    confirmation,
+    password: typeof passwordValue === 'string' && passwordValue ? passwordValue : undefined,
+  }
 }
 
 export function parseSetUserRoleInput(value: unknown): SetUserRoleInput {

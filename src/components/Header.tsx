@@ -43,14 +43,14 @@ export default function Header() {
         {/* Actions */}
         <div className="flex items-center gap-3 sm:gap-4 md:gap-6">
           <Link
-            href="/login"
+            href="/auth/login"
             className="hidden text-[0.72rem] font-semibold uppercase tracking-widest2 text-ink/80 transition-colors hover:text-maroon desktop:block"
           >
             Log In
           </Link>
 
           <Link
-            href="/signup"
+            href="/auth/signup"
             className="hidden rounded-full bg-maroon px-4 py-2.5 text-[0.7rem] font-semibold uppercase tracking-widest2 text-cream transition-colors hover:bg-maroon-dark sm:inline-flex sm:px-5"
           >
             Get Started
@@ -91,14 +91,14 @@ export default function Header() {
 
             <div className="mt-5 flex flex-col gap-3">
               <Link
-                href="/login"
+                href="/auth/login"
                 onClick={() => setOpen(false)}
                 className="rounded-full border border-maroon px-4 py-3.5 text-center text-sm font-semibold uppercase tracking-widest2 text-maroon transition-colors hover:bg-maroon hover:text-cream"
               >
                 Log In
               </Link>
               <Link
-                href="/signup"
+                href="/auth/signup"
                 onClick={() => setOpen(false)}
                 className="rounded-full bg-maroon px-4 py-3.5 text-center text-sm font-semibold uppercase tracking-widest2 text-cream transition-colors hover:bg-maroon-dark"
               >

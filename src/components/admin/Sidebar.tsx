@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from 'next/navigation'
 import {
   Gift,
   LayoutGrid,
@@ -16,13 +17,13 @@ import {
 } from "lucide-react";
 
 const navItems = [
-  { label: "Overview", icon: LayoutGrid },
-  { label: "Businesses", icon: Store },
-  { label: "Products", icon: Package },
-  { label: "Approvals", icon: ClipboardCheck },
-  { label: "Analytics", icon: LineChart },
-  { label: "Users", icon: Users },
-  { label: "Settings", icon: Settings },
+  { label: "Overview", icon: LayoutGrid, href: "/dashboard", roles: ["customer", "vendor", "admin", "super_admin"] },
+  { label: "Businesses", icon: Store, href: "#", roles: ["admin", "super_admin"] },
+  { label: "Products", icon: Package, href: "#", roles: ["vendor", "admin", "super_admin"] },
+  { label: "Approvals", icon: ClipboardCheck, href: "#", roles: ["admin", "super_admin"] },
+  { label: "Analytics", icon: LineChart, href: "#", roles: ["vendor", "admin", "super_admin"] },
+  { label: "Users", icon: Users, href: "#", roles: ["admin", "super_admin"] },
+  { label: "Settings", icon: Settings, href: "/dashboard/settings", roles: ["customer", "vendor", "admin", "super_admin"] },
 ];
 
 const baseItem =
@@ -34,10 +35,18 @@ const inactiveItem = `${baseItem} text-[#6F675A] hover:bg-[#F7F1E8] hover:text-b
 export default function Sidebar({
   open,
   onClose,
+  role,
+  onLogout,
+  logoutPending,
 }: {
   open: boolean;
   onClose: () => void;
+  role: "customer" | "vendor" | "admin" | "super_admin";
+  onLogout: () => void;
+  logoutPending: boolean;
 }) {
+  const pathname = usePathname();
+  const visibleItems = navItems.filter((item) => item.roles.includes(role));
   return (
     <>
       {open && (
@@ -63,7 +72,7 @@ export default function Sidebar({
               Wishstead
             </p>
             <p className="mt-0.5 text-[0.58rem] font-semibold uppercase tracking-[0.22em] text-[#8A8172]">
-              Admin Portal
+              {role.replace("_", " ")} portal
             </p>
           </div>
           <button
@@ -78,12 +87,12 @@ export default function Sidebar({
 
         {/* Navigation */}
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 pb-4">
-          {navItems.map(({ label, icon: Icon }) => {
-            const isActive = label === "Overview";
+          {visibleItems.map(({ label, icon: Icon, href }) => {
+            const isActive = href === pathname;
             return (
               <Link
                 key={label}
-                href="#"
+                href={href ?? "#"}
                 onClick={onClose}
                 className={isActive ? activeItem : inactiveItem}
               >
@@ -116,10 +125,10 @@ export default function Sidebar({
               <LifeBuoy className="h-[18px] w-[18px] shrink-0" strokeWidth={1.75} />
               <span>Support</span>
             </Link>
-            <Link href="#" onClick={onClose} className={inactiveItem}>
+            <button type="button" onClick={onLogout} disabled={logoutPending} className={`${inactiveItem} w-full disabled:opacity-60`}>
               <LogOut className="h-[18px] w-[18px] shrink-0" strokeWidth={1.75} />
-              <span>Logout</span>
-            </Link>
+              <span>{logoutPending ? "Signing out…" : "Logout"}</span>
+            </button>
           </div>
         </div>
       </aside>

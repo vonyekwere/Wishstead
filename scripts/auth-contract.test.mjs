@@ -9,6 +9,7 @@ test('all required authentication route contracts exist', async () => {
     'src/app/api/auth/signup/route.ts': 'POST',
     'src/app/api/auth/login/route.ts': 'POST',
     'src/app/api/auth/google/route.ts': 'POST',
+    'src/app/api/auth/vendor-application/route.ts': 'POST',
     'src/app/api/auth/logout/route.ts': 'POST',
     'src/app/api/auth/me/route.ts': 'GET',
     'src/app/api/auth/profile/route.ts': 'PATCH',
@@ -112,4 +113,65 @@ test('Google profile metadata is normalized by the auth trigger', async () => {
   assert.match(migration, /raw_user_meta_data ->> 'picture'/i)
   assert.match(migration, /values \(new\.id, profile_name, profile_avatar, 'customer'\)/i)
   assert.match(migration, /revoke execute on function public\.handle_new_user/i)
+})
+
+test('vendor applications are private, constrained, and least privileged', async () => {
+  const migration = await read('supabase/migrations/20260909120000_create_vendor_applications.sql')
+  const service = await read('src/features/auth/server/service.ts')
+  assert.match(migration, /alter table public\.vendor_applications enable row level security/i)
+  assert.match(migration, /auth\.uid\(\) = user_id/i)
+  assert.match(migration, /'vendor-logos'/i)
+  assert.match(service, /vendor_applications/)
+  assert.match(service, /deleteUser\(data\.user\.id\)/)
+})
+
+test('successful vendor registration assigns the vendor role atomically', async () => {
+  const migration = await read('supabase/migrations/20260909130000_activate_registered_vendors.sql')
+  assert.match(migration, /before insert on public\.vendor_applications/i)
+  assert.match(migration, /update public\.profiles set role = 'vendor'/i)
+  assert.match(migration, /new\.status := 'approved'/i)
+  assert.match(migration, /where exists[\s\S]*vendor_applications/i)
+  assert.match(migration, /revoke execute on function public\.activate_registered_vendor/i)
+})
+
+test('new passwords are consistently hardened and explained to users', async () => {
+  const validation = await read('src/features/auth/server/validation.ts')
+  const policy = await read('src/features/auth/password-policy.ts')
+  const config = await read('supabase/config.toml')
+  const signup = await read('src/app/(site)/signup/page.tsx')
+  const vendor = await read('src/app/(site)/vender/page.tsx')
+  const reset = await read('src/app/(site)/auth/reset-password/page.tsx')
+
+  assert.match(validation, /isStrongPassword/)
+  assert.match(policy, /uppercase[\s\S]*lowercase[\s\S]*number[\s\S]*symbol/)
+  assert.match(config, /password_requirements = "lower_upper_letters_digits_symbols"/)
+  for (const page of [signup, vendor, reset]) assert.match(page, /PasswordRequirements/)
+})
+
+test('local auth emails use branded production-portable templates', async () => {
+  const config = await read('supabase/config.toml')
+  const recovery = await read('supabase/templates/recovery.html')
+  const confirmation = await read('supabase/templates/confirmation.html')
+
+  assert.match(config, /auth\.email\.template\.recovery[\s\S]*templates\/recovery\.html/)
+  assert.match(config, /auth\.email\.notification\.password_changed/)
+  assert.match(recovery, /WISHSTEAD/)
+  assert.match(recovery, /\{\{ \.ConfirmationURL \}\}/)
+  assert.match(confirmation, /\{\{ \.ConfirmationURL \}\}/)
+})
+
+test('account settings are available to every role without exposing role updates', async () => {
+  const page = await read('src/app/dashboard/settings/page.tsx')
+  const settings = await read('src/components/dashboard/AccountSettings.tsx')
+  const service = await read('src/features/auth/server/service.ts')
+
+  assert.match(page, /customer[\s\S]*vendor[\s\S]*admin[\s\S]*super_admin/)
+  assert.match(settings, /\/api\/auth\/profile/)
+  assert.match(settings, /\/api\/auth\/email/)
+  assert.match(settings, /\/api\/auth\/password/)
+  assert.match(settings, /\/api\/auth\/account/)
+  assert.doesNotMatch(settings, /setUserRole|\/role/)
+  assert.match(service, /identity\.provider === 'email'/)
+  assert.match(service, /last_sign_in_at[\s\S]*10 \* 60 \* 1000/)
+  assert.match(service, /super_admin_deletion_forbidden/)
 })
